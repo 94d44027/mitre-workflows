@@ -101,6 +101,17 @@ When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process
 * Indicate this list as MWMLIST
 * Count the total number of techniques shown (verify against table header if present)
 
+### STEP 3: Check if mitigation exists in the database
+* switch to Nebula Graph Studio
+* navigate to Console
+* make sure you are in ESP01 space
+* run the query like `MATCH (m:tMitreMitigation) WHERE id(m) IN ["M####"] RETURN id(m) AS mitigation;` where *"MXXXX"* is the input parementer for teh workflow
+* if the query output is not empty, proceed to step 4
+* if the query output is empty, create an nGQL query like this `INSERT VERTEX IF NOT EXISTS tMitreMitigation(Mitigation_ID, Mitigation_Name, Matrix, Description, Mitigation_Version) VALUES "MXXXX":("MXXXX", "<Mitigation_Name>", "Enterprise", "<Brief_description>", "<Mitigation_Version>");` where MXXXX is the imput parameter - mitigation ID, <Mitigation_name> - mitigation name, <Brief_description> - short description of the mitigation, <Mitigation_Version> - the version of teh mitigation, if available on MITRE mitigation web page, leave empty if none available.
+* Present the nGQL query for teh user to approve
+* Execute nGQl query for MXXXX tag creation after user approval
+ 
+
 ### STEP 4: Verify that techniques/subtechniques are present in the database
 * switch to Nebula Graph Studio
 * navigate to Console
@@ -168,14 +179,14 @@ text
 INSERT EDGE IF NOT EXISTS has_subtechnique VALUES "T####"->"T####.###"@0:();
 `
 
-5e. Repeat the steps 5a-5d, until the list IMISSTHEM is exhausted. Batch all the nGQL statements into the single text (indicate it as RESULTINSERT) separating them by new line and present it to the user for verification.
+5e. Process all the techniques/subtechniques in the IMISSTHEM list. Batch all the nGQL statements into the single text (indicate it as RESULTINSERT) separating them by new line and present it to the user for verification.
 5f. Upon the user approval, execute RESULTINSERT
 
 STEP 6: create mitigation edges
 
 For each technique/subtechniaue from MWMLIST:
 
- * 6a. craete nGQL statements for mitigates edges (can batch multiple):
+ * 6a. create nGQL statements for mitigates edges (can batch multiple):
 
 text
 
@@ -185,7 +196,7 @@ VALUES "M####"->"T####"@0:(NULL, "Enterprise"),
        "M####"->"T####.###"@0:(NULL, "Enterprise");
 `
 
-* 6b. get all the stetements into teh single text (indicate it as RESULTINSERT2) separating them by new line and present it to the user for verification.
+* 6b. get all the statements into the single text (indicate it as RESULTINSERT2) separating them by new line and present it to the user for verification.
 * 6c. Upon the user approval, execute RESULTINSERT2
 
 STEP 7: Verification
@@ -197,7 +208,7 @@ text
 MATCH (m:tMitreMitigation)-[e:mitigates]->(t) WHERE id(m) == "M####" RETURN COUNT(e);
 `
 
-Compare result with the total count from MITRE ATT&CK page (MWWLIST).
+Compare result with the total count from MITRE ATT&CK page (MWMLIST).
 
 * 7b. If counts don't match:
 
