@@ -105,10 +105,10 @@ When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process
 * switch to Nebula Graph Studio
 * navigate to Console
 * make sure you are in ESP01 space
-* run the query like `MATCH (m:tMitreMitigation) WHERE id(m) IN ["M####"] RETURN id(m) AS mitigation;` where *"MXXXX"* is the input parementer for teh workflow
+* run the query like `MATCH (m:tMitreMitigation) WHERE id(m) IN ["M####"] RETURN id(m) AS mitigation;` where *"MXXXX"* is the input parameter for the workflow
 * if the query output is not empty, proceed to step 4
-* if the query output is empty, create an nGQL query like this `INSERT VERTEX IF NOT EXISTS tMitreMitigation(Mitigation_ID, Mitigation_Name, Matrix, Description, Mitigation_Version) VALUES "MXXXX":("MXXXX", "<Mitigation_Name>", "Enterprise", "<Brief_description>", "<Mitigation_Version>");` where MXXXX is the imput parameter - mitigation ID, <Mitigation_name> - mitigation name, <Brief_description> - short description of the mitigation, <Mitigation_Version> - the version of teh mitigation, if available on MITRE mitigation web page, leave empty if none available.
-* Present the nGQL query for teh user to approve
+* if the query output is empty, create an nGQL query like this `INSERT VERTEX IF NOT EXISTS tMitreMitigation(Mitigation_ID, Mitigation_Name, Matrix, Description, Mitigation_Version) VALUES "MXXXX":("MXXXX", "<Mitigation_Name>", "Enterprise", "<Brief_description>", "<Mitigation_Version>");` where MXXXX is the input parameter - mitigation ID, <Mitigation_name> - mitigation name, <Brief_description> - short description of the mitigation, <Mitigation_Version> - the version of the mitigation, if available on MITRE mitigation web page, leave empty if none available.
+* Present the nGQL query for the user to approve
 * Execute nGQl query for MXXXX tag creation after user approval
  
 
@@ -119,15 +119,15 @@ When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process
 * run the query like `MATCH (t:tMitreTechnique) WHERE id(t) IN ["TXXXX", "TYYY", "TZZZ.ZZZ"] RETURN id(t) AS technique;` where *"TXXXX", "TYYY", "TZZZ.ZZZ"* represent comma-delimited list of the techniques/subtechniques which presence is to be verified (MWMLIST)
 * Memorize the techniques/subtechniques at the output window 
 * check the number to the right of "Total" at the bottom right corner of query output window
-* If this number is greater than 5, scroll down the window abd memorize the remaining techniques/subtechniques in the output
-* If there are multiple pages in the query output (the number in blue rounded square to the right of the "total" number") navigate to the next page untill all lines in query output have been seen, understood and the resulting techniques and subtechniques have been memorized 
+* If this number is greater than 5, scroll down the window and memorize the remaining techniques/subtechniques in the output
+* If there are multiple pages in the query output (the number in blue rounded square to the right of the "total" number") navigate to the next page until all lines in query output have been seen, understood and the resulting techniques and subtechniques have been memorized 
 * Indicate the memorized list as DBMList
 * Compare the MWMLIST to DBMLIST
 * If there are techniques/subtechniques from MWMLIST which are not present in the database (DBMLIST), call this list IMISSTHEMLIST and go to the next step
 * if there are no missing techniques/subtechniques (i.e. database contains every technique/subtechnique from the mitigation webpage)- proceed to step 6 
 
 ### STEP 5: Create missing techniques/subtechniques in the database
-For each technique/subtechnique ID in the IMISSTHEM list:
+For each technique/subtechnique ID in the IMISSTHEMLIST:
 * 5a. Navigate to technique page. URL format: https://attack.mitre.org/techniques/T####/ (or /T####/###/ for subtechniques)
 * 5b. Extract required information:
     * Technique_ID (from URL or page)
@@ -179,7 +179,7 @@ text
 INSERT EDGE IF NOT EXISTS has_subtechnique VALUES "T####"->"T####.###"@0:();
 `
 
-5e. Process all the techniques/subtechniques in the IMISSTHEM list. Batch all the nGQL statements into the single text (indicate it as RESULTINSERT) separating them by new line and present it to the user for verification.
+5e. Process all the techniques/subtechniques in the IMISSTHEMLIST. Batch all the nGQL statements into the single text (indicate it as RESULTINSERT) separating them by new line and present it to the user for verification.
 5f. Upon the user approval, execute RESULTINSERT
 
 STEP 6: create mitigation edges
