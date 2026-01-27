@@ -1,106 +1,131 @@
-MITRE ATT&CK MITIGATION SYNCHRONIZATION WORKFLOW (CORRECTED)
-Purpose
+# MITRE ATT&CK MITIGATION SYNCHRONIZATION WORKFLOW
+
+## Purpose
+
 Synchronize a MITRE ATT&CK mitigation and all its associated techniques/subtechniques from attack.mitre.org into the NebulaGraph database.
 
-When to Use This Workflow
+### When to Use This Workflow
+
 When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process M1034 mitigation"
 
-Critical Schema Information
-Tag: tMitreMitigation
+
+## Critical Schema Information
+
+
+### Tag: tMitreMitigation
+
+*Properties:* 
+ 
  Mitigation_ID (string, nullable)
+ 
  Mitigation_Name (string, nullable)
+ 
  Matrix (string, nullable, default: "Enterprise")
+ 
  Description (string, nullable)
+ 
  Mitigation_Version (string, nullable)
 
-Tag: tMitreTechnique
-CRITICAL: Property name is "rcelpe" (NOT "recipe" or "rclpe")
 
-Technique_ID (string, NOT NULL)
+### Tag: tMitreTechnique
 
-Technique_Name (string, NOT NULL)
+*Properties:*
 
-Mitre_Attack_Version (string, nullable)
+ Technique_ID (string, NOT NULL)
 
-rcelpe (bool, nullable, default: false) - "Can be applied to a host with critical vulnerability"
+ Technique_Name (string, NOT NULL)
+ 
+ Mitre_Attack_Version (string, nullable)
+ 
+ rcelpe (bool, nullable, default: false) - "Can be applied to a host with critical vulnerability"
+ 
+ priority (int8, NOT NULL, default: 4)
+ 
+ execution_min (float, NOT NULL, default: 0.1667)
+ 
+ execution_max (float, NOT NULL, default: 120)
 
-priority (int8, NOT NULL, default: 4)
+> Note: newly added techniques should have Mitre_Attack_Version = "18.0" 
 
-execution_min (float, NOT NULL, default: 0.1667)
+### Tag: tMitreTactic
 
-execution_max (float, NOT NULL, default: 120)
+*Properties*
 
-Tag: tMitreTactic
-Tactic_ID (string)
+ Tactic_ID (string, NOT NULL)
+ 
+ Tactic_Name (string, NOT NULL)
+ 
+ Mitre_Attack_Version (string, nullable)
 
-Tactic_Name (string)
+### Edge: mitigates (from tMitreMitigation to tMitreTechnique)
 
-Mitre_Attack_Version (string, nullable)
+*Properties*
 
-Edge: mitigates (from tMitreMitigation to tMitreTechnique)
-Use_Description (string, nullable)
+ Use_Description (string, nullable)
+ 
+ Domain (string, nullable, default: "Enterprise")
 
-Domain (string, nullable, default: "Enterprise")
+ > Note: added edges should have rank @0
 
-Edge: part_of (from technique/subtechnique to tactic)
-CRITICAL: Both parent techniques AND subtechniques connect directly to tactics
+### Edge: part_of (from technique/subtechnique to tactic)
+ 
+ No properties
 
-No properties, rank @0
+ > CRITICAL: Both parent techniques AND subtechniques connect directly to tactics.
+ > Note: added edges should have rank @0 .
+ > Example: T1071.001 -> TA0011, T1071 -> TA0011 (both connect to same tactic).
+ 
+### Edge: has_subtechnique 
+ 
+ No properties
+ 
+> From parent technique to subtechnique.
+> This edge represents the technique hierarchy.
+> Example: T1071 -> T1071.001 (parent has subtechnique).
+> Note: Added edges should have rank @0
 
-Example: T1071.001 -> TA0011, T1071 -> TA0011 (both connect to same tactic)
+## Workflow Steps
 
-Edge: has_subtechnique (from parent technique to subtechnique)
-This edge represents the technique hierarchy
+### STEP 1: Navigate to MITRE ATT&CK Page
+* Open MITRE ATT&CK mitigation page: https://attack.mitre.org/mitigations/M####/
+> M#### stands for the mitigation being currently processed
+* Take screenshot to see the page structure
 
-No properties, rank @0
+### STEP 2: Extract Technique List
+* Locate the "Techniques Addressed by Mitigation" section
+* Extract the COMPLETE list of technique IDs from the table
+> CRITICAL: Use get_page_text or read_page tools to ensure you capture ALL techniques
+* Count the total number of techniques shown (verify against table header if present)
 
-Example: T1071 -> T1071.001 (parent has subtechnique)
+### STEP 3: For EACH Technique - Open and Extract Details
 
-Workflow Steps
-STEP 1: Navigate to MITRE ATT&CK Page
-Open MITRE ATT&CK mitigation page: https://attack.mitre.org/mitigations/M####/
-
-Take screenshot to see the page structure
-
-STEP 2: Extract Technique List
-Locate the "Techniques Addressed by Mitigation" section
-
-Extract the COMPLETE list of technique IDs from the table
-
-CRITICAL: Use get_page_text or read_page tools to ensure you capture ALL techniques
-
-Count the total number of techniques shown (verify against table header if present)
-
-STEP 3: For EACH Technique - Open and Extract Details
 For each technique ID in the list:
 
-3a. Navigate to technique page:
+* 3a. Navigate to technique page. URL format: https://attack.mitre.org/techniques/T####/ (or /T####/###/ for subtechniques)
 
-URL format: https://attack.mitre.org/techniques/T####/ (or /T####/###/ for subtechniques)
+* 3b. Extract required information:
 
-3b. Extract required information:
+  * Technique_ID (from URL or page)
 
-Technique_ID (from URL or page)
+  * Technique_Name (page heading)
 
-Technique_Name (page heading)
+*** Tactic_ID(s) - Look for "Tactics" section showing which tactic(s) this technique belongs to
 
-Tactic_ID(s) - Look for "Tactics" section showing which tactic(s) this technique belongs to
+*** Mitre_Attack_Version (from page metadata, use "18.0" if not found)
 
-Mitre_Attack_Version (from page metadata, use "18.0" if not found)
+*** Domain (currently only "Enterprise")
 
-Domain (typically "Enterprise")
+*** For subtechniques: identify parent technique ID
 
-For subtechniques: identify parent technique ID
+** 3c. Determine property values:
 
-3c. Determine property values:
+*** rcelpe: default to false (only set to true if explicitly mentioned regarding critical vulnerabilities)
 
-rcelpe: default to false (only set to true if explicitly mentioned regarding critical vulnerabilities)
+*** priority: default to 4
 
-priority: default to 4
+*** execution_min: default to 0.1667
 
-execution_min: default to 0.1667
-
-execution_max: default to 120
+*** execution_max: default to 120
 
 STEP 4: Insert Data into NebulaGraph
 4a. For each parent technique:
