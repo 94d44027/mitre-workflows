@@ -6,7 +6,7 @@ Synchronize a MITRE ATT&CK mitigation and all its associated techniques/subtechn
 
 ### When to Use This Workflow
 
-When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process M1034 mitigation"
+When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process M1034 mitigation". The "M1034" (or any other mitigation following "MXXXX" pattern, where XXXX is 4 digits) will be an input parameter for this workflow further down abbreviated as M####. 
 
 
 ## Critical Schema Information
@@ -16,34 +16,35 @@ When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process
 
 *Properties:* 
  
- Mitigation_ID (string, nullable)
+    Mitigation_ID (string, nullable)
  
- Mitigation_Name (string, nullable)
+    Mitigation_Name (string, nullable)
  
- Matrix (string, nullable, default: "Enterprise")
+    Matrix (string, nullable, default: "Enterprise")
  
- Description (string, nullable)
+    Description (string, nullable)
  
- Mitigation_Version (string, nullable)
+    Mitigation_Version (string, nullable)
 
 
 ### Tag: tMitreTechnique
 
 *Properties:*
 
- Technique_ID (string, NOT NULL)
+    Technique_ID (string, NOT NULL)
 
- Technique_Name (string, NOT NULL)
+    Technique_Name (string, NOT NULL)
  
- Mitre_Attack_Version (string, nullable)
+    Mitre_Attack_Version (string, nullable)
  
- rcelpe (bool, nullable, default: false) - "Can be applied to a host with critical vulnerability"
+    rcelpe (bool, nullable, default: false) 
+ > Note: "Can be applied to a host with critical vulnerability"
  
- priority (int8, NOT NULL, default: 4)
+    priority (int8, NOT NULL, default: 4)
  
- execution_min (float, NOT NULL, default: 0.1667)
+    execution_min (float, NOT NULL, default: 0.1667)
  
- execution_max (float, NOT NULL, default: 120)
+    execution_max (float, NOT NULL, default: 120)
 
 > Note: newly added techniques should have Mitre_Attack_Version = "18.0" 
 
@@ -51,19 +52,19 @@ When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process
 
 *Properties*
 
- Tactic_ID (string, NOT NULL)
+    Tactic_ID (string, NOT NULL)
  
- Tactic_Name (string, NOT NULL)
+    Tactic_Name (string, NOT NULL)
  
- Mitre_Attack_Version (string, nullable)
+    Mitre_Attack_Version (string, nullable)
 
 ### Edge: mitigates (from tMitreMitigation to tMitreTechnique)
 
 *Properties*
 
- Use_Description (string, nullable)
+    Use_Description (string, nullable)
  
- Domain (string, nullable, default: "Enterprise")
+    Domain (string, nullable, default: "Enterprise")
 
  > Note: added edges should have rank @0
 
@@ -86,70 +87,81 @@ When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process
 
 ## Workflow Steps
 
-### STEP 1: Navigate to MITRE ATT&CK Page
+### STEP 1: Navigate to MITRE ATT&CK Page for mitigation M####
 * Open MITRE ATT&CK mitigation page: https://attack.mitre.org/mitigations/M####/
 > M#### stands for the mitigation being currently processed
 * Take screenshot to see the page structure
 
-### STEP 2: Extract Technique List
+### STEP 2: Extract Techniques List related to M####
 * Locate the "Techniques Addressed by Mitigation" section
-* Extract the COMPLETE list of technique IDs from the table
-> CRITICAL: Use get_page_text or read_page tools to ensure you capture ALL techniques
+* Extract the COMPLETE list of technique/subtechnique IDs from the table
+> CRITICAL: Use get_page_text or read_page tools to ensure you capture ALL techniques.
+> CRITICAL: if the list looks like "T1557", ".002" it means that you have a technique "T1557" and its subtechnique "T1557.002"
+> CRITICAL: both techniques and subtechniques are counted
+* Indicate this list as MWMLIST
 * Count the total number of techniques shown (verify against table header if present)
 
-### STEP 3: For EACH Technique - Open and Extract Details
+### STEP 4: Verify that techniques/subtechniques are present in the database
+* switch to Nebula Graph Studio
+* navigate to Console
+* make sure you are in ESP01 space
+* run the query like `MATCH (t:tMitreTechnique) WHERE id(t) IN ["TXXXX", "TYYY", "TZZZ.ZZZ"] RETURN id(t) AS technique;` where *"TXXXX", "TYYY", "TZZZ.ZZZ"* represent comma-delimited list of the techniques/subtechniques which presence is to be verified (MWMLIST)
+* Memorize the techniques/subtechniques at the output window 
+* check the number to the right of "Total" at the bottom right corner of query output window
+* If this number is greater than 5, scroll down the window abd memorize the remaining techniques/subtechniques in the output
+* If there are multiple pages in the query output (the number in blue rounded square to the right of the "total" number") navigate to the next page untill all lines in query output have been seen, understood and the resulting techniques and subtechniques have been memorized 
+* Indicate the memorized list as DBMList
+* Compare the MWMLIST to DBMLIST
+* If there are techniques/subtechniques from MWMLIST which are not present in the database (DBMLIST), call this list IMISSTHEMLIST and go to the next step
+* if there are no missing techniques/subtechniques (i.e. database contains every technique/subtechnique from the mitigation webpage)- proceed to step 6 
 
-For each technique ID in the list:
-
-* 3a. Navigate to technique page. URL format: https://attack.mitre.org/techniques/T####/ (or /T####/###/ for subtechniques)
-
-* 3b. Extract required information:
-
-  * Technique_ID (from URL or page)
-
-  * Technique_Name (page heading)
-
-*** Tactic_ID(s) - Look for "Tactics" section showing which tactic(s) this technique belongs to
-
-*** Mitre_Attack_Version (from page metadata, use "18.0" if not found)
-
-*** Domain (currently only "Enterprise")
-
-*** For subtechniques: identify parent technique ID
-
-** 3c. Determine property values:
-
-*** rcelpe: default to false (only set to true if explicitly mentioned regarding critical vulnerabilities)
-
-*** priority: default to 4
-
-*** execution_min: default to 0.1667
-
-*** execution_max: default to 120
-
-STEP 4: Insert Data into NebulaGraph
-4a. For each parent technique:
-
+### STEP 5: Create missing techniques/subtechniques in the database
+For each technique/subtechnique ID in the IMISSTHEM list:
+* 5a. Navigate to technique page. URL format: https://attack.mitre.org/techniques/T####/ (or /T####/###/ for subtechniques)
+* 5b. Extract required information:
+    * Technique_ID (from URL or page)
+    * Technique_Name (page heading)
+    * Tactic_ID(s) - Look for "Tactics" section showing which tactic(s) this technique belongs to
+    * Mitre_Attack_Version (from page metadata, use "18.0" if not found)
+    * Domain (currently only "Enterprise")
+> Note: For subtechniques identify parent technique ID, which is first 5 symbols like "TXXXX" before the dot (".") 
+* 5c. Assign the tMireTechnique property values:
+   * `rcelpe`: default to false (only set to true if explicitly mentioned regarding critical vulnerabilities)
+   * `priority`: default to 4
+   * `execution_min`: default to 0.1667
+   * `execution_max`: default to 120
+* 5d. Prepare nGQL expression to insert missing technique/subtechnique. Do not execute so far.
+  * For parent technique:
 text
+`
 INSERT VERTEX IF NOT EXISTS tMitreTechnique(Technique_ID, Technique_Name, Mitre_Attack_Version, rcelpe, priority, execution_min, execution_max) 
 VALUES "T####":("T####", "Technique Name", "18.0", false, 4, 0.1667, 120);
-4b. For each subtechnique:
-
+`
+  * For subtechnique:
 text
+`
 INSERT VERTEX IF NOT EXISTS tMitreTechnique(Technique_ID, Technique_Name, Mitre_Attack_Version, rcelpe, priority, execution_min, execution_max) 
 VALUES "T####.###":("T####.###", "Subtechnique Name", "18.0", false, 4, 0.1667, 120);
-4c. Insert tactic relationships (BOTH parent and subtechniques):
+`
+  * Insert tactic relationships (BOTH parent and subtechniques):
 
 text
+`
 -- Parent technique to tactic
 INSERT EDGE IF NOT EXISTS part_of VALUES "T####"->"TA####"@0:();
-
+`
+`
 -- Subtechnique to tactic (same tactic as parent)
 INSERT EDGE IF NOT EXISTS part_of VALUES "T####.###"->"TA####"@0:();
-4d. Insert parent-subtechnique hierarchy:
+`
+
+ * Insert parent-subtechnique hierarchy:
 
 text
+`
 INSERT EDGE IF NOT EXISTS has_subtechnique VALUES "T####"->"T####.###"@0:();
+`
+
 4e. Insert mitigates edges (can batch multiple):
 
 text
