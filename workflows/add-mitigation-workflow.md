@@ -184,7 +184,7 @@ INSERT EDGE IF NOT EXISTS has_subtechnique VALUES "T####"->"T####.###"@0:();
 
 STEP 6: create mitigation edges
 
-For each technique/subtechniaue from MWMLIST:
+For each technique/subtechnique from MWMLIST:
 
  * 6a. create nGQL statements for mitigates edges (can batch multiple):
 
