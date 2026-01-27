@@ -132,13 +132,17 @@ For each technique/subtechnique ID in the IMISSTHEM list:
    * `execution_max`: default to 120
 * 5d. Prepare nGQL expression to insert missing technique/subtechnique. Do not execute so far.
   * For parent technique:
+
 text
+
 `
 INSERT VERTEX IF NOT EXISTS tMitreTechnique(Technique_ID, Technique_Name, Mitre_Attack_Version, rcelpe, priority, execution_min, execution_max) 
 VALUES "T####":("T####", "Technique Name", "18.0", false, 4, 0.1667, 120);
 `
   * For subtechnique:
+
 text
+
 `
 INSERT VERTEX IF NOT EXISTS tMitreTechnique(Technique_ID, Technique_Name, Mitre_Attack_Version, rcelpe, priority, execution_min, execution_max) 
 VALUES "T####.###":("T####.###", "Subtechnique Name", "18.0", false, 4, 0.1667, 120);
@@ -146,42 +150,60 @@ VALUES "T####.###":("T####.###", "Subtechnique Name", "18.0", false, 4, 0.1667, 
   * Insert tactic relationships (BOTH parent and subtechniques):
 
 text
+
 `
 -- Parent technique to tactic
 INSERT EDGE IF NOT EXISTS part_of VALUES "T####"->"TA####"@0:();
 `
+
 `
 -- Subtechnique to tactic (same tactic as parent)
 INSERT EDGE IF NOT EXISTS part_of VALUES "T####.###"->"TA####"@0:();
 `
-
  * Insert parent-subtechnique hierarchy:
 
 text
+
 `
 INSERT EDGE IF NOT EXISTS has_subtechnique VALUES "T####"->"T####.###"@0:();
 `
 
-4e. Insert mitigates edges (can batch multiple):
+5e. Repeat the steps 5a-5d, until the list IMISSTHEM is exhausted. Batch all the nGQL statements into the single text (indicate it as RESULTINSERT) separating them by new line and present it to the user for verification.
+5f. Upon the user approval, execute RESULTINSERT
+
+STEP 6: create mitigation edges
+
+For each technique/subtechniaue from MWMLIST:
+
+ * 6a. craete nGQL statements for mitigates edges (can batch multiple):
 
 text
+
+`
 INSERT EDGE IF NOT EXISTS mitigates 
 VALUES "M####"->"T####"@0:(NULL, "Enterprise"),
        "M####"->"T####.###"@0:(NULL, "Enterprise");
-STEP 5: Verification
-5a. Count check:
+`
+
+* 6b. get all the stetements into teh single text (indicate it as RESULTINSERT2) separating them by new line and present it to the user for verification.
+* 6c. Upon the user approval, execute RESULTINSERT2
+
+STEP 7: Verification
+* 7a. Count check:
 
 text
+
+`
 MATCH (m:tMitreMitigation)-[e:mitigates]->(t) WHERE id(m) == "M####" RETURN COUNT(e);
-Compare result with the total count from MITRE ATT&CK page.
+`
 
-5b. If counts don't match:
+Compare result with the total count from MITRE ATT&CK page (MWWLIST).
 
-List all techniques in graph vs. MITRE ATT&CK
+* 7b. If counts don't match:
 
-Identify missing techniques
+  * List all techniques in the database vs. MITRE ATT&CK (MWMLIST)
+  * Identify missing techniques
 
-Insert missing data
-
-STEP 6: STOP
+STEP 8: STOP
 Once verification passes, STOP. Do not proceed with other investigations unless explicitly requested.
+Present the results.
