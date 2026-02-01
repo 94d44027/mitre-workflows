@@ -138,15 +138,13 @@ CRITICAL RULES:
 * switch to Nebula Graph Studio
 * navigate to Console
 * make sure you are in ESP01 space
-* run the query like `MATCH (t:tMitreTechnique) WHERE id(t) IN ["TXXXX", "TYYY", "TZZZ.ZZZ"] RETURN id(t) AS technique;` where *"TXXXX", "TYYY", "TZZZ.ZZZ"* represent comma-delimited list of the techniques/subtechniques which presence is to be verified (MWMLIST)
-* Memorize the techniques/subtechniques at the output window 
-* check the number to the right of "Total" at the bottom right corner of query output window
-* If this number is greater than 5, scroll down the window and memorize the remaining techniques/subtechniques in the output
-* If there are multiple pages in the query output (the number in blue rounded square to the right of the "total" number") navigate to the next page until all lines in query output have been seen, understood and the resulting techniques and subtechniques have been memorized 
-* Indicate the memorized list as DBMList
-* Compare the MWMLIST to DBMLIST
-* If there are techniques/subtechniques from MWMLIST which are not present in the database (DBMLIST), call this list IMISSTHEMLIST and go to the next step
-* if there are no missing techniques/subtechniques (i.e. database contains every technique/subtechnique from the mitigation webpage)- proceed to step 6 
+* run the query like: `MATCH (t:tMitreTechnique) WHERE id(t) IN ["TXXXX", "TYYY", "TZZZ.ZZZ"] RETURN collect(id(t)) AS techniques, count(id(t)) AS total;` where "TXXXX", "TYYY", "TZZZ.ZZZ" represent comma-delimited list of the techniques/subtechniques which presence is to be verified (MWMLIST)
+*  The output will show a single row with all found techniques as a comma-separated list
+* Compare the count with the total number of techniques in MWMLIST
+* Extract the list of found techniques from the output (techniques column)
+* Compare MWMLIST to the found techniques list to identify any missing techniques
+* If there are techniques/subtechniques from MWMLIST which are not present in the database, call this list IMISSTHEMLIST and go to the next step
+* if there are no missing techniques/subtechniques - proceed to step 6
 
 ### STEP 5: Create missing techniques/subtechniques in the database
 > **REMINDER:** You are processing mitigation M#### (confirm this is the correct ID from STEP 0)
