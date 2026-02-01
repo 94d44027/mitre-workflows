@@ -6,8 +6,9 @@ Synchronize a MITRE ATT&CK mitigation and all its associated techniques/subtechn
 
 ### When to Use This Workflow
 
-When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process M1034 mitigation". The "M1034" (or any other mitigation following "MXXXX" pattern, where XXXX is 4 digits) will be an input parameter for this workflow further down abbreviated as M####. 
+When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process M1034 mitigation". The "M1034" (or any other mitigation following "MXXXX" pattern, where XXXX is 4 digits) will be an input parameter for this workflow further down abbreviated as M####.
 
+**CRITICAL:** Once you identify the mitigation ID (M####), explicitly confirm it at the start of the workflow and maintain this ID throughout ALL workflow steps. Do not switch to a different mitigation ID unless explicitly instructed by the user.
 
 ## Critical Schema Information
 
@@ -87,12 +88,22 @@ When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process
 
 ## Workflow Steps
 
+### STEP 0: Confirm Input Parameter
+
+- Explicitly state which mitigation ID (M####) is being processed at the start
+- Create a variable or tracking note: "CURRENT_MITIGATION = M####"
+- CRITICAL: Do NOT switch to a different mitigation ID unless the user explicitly requests it
+- If the conversation history mentions a different mitigation ID, ASK the user to clarify which mitigation should be processed before proceeding
+- Reference this mitigation ID in ALL subsequent steps
+
 ### STEP 1: Navigate to MITRE ATT&CK Page for mitigation M####
+> **REMINDER:** You are processing mitigation M#### (confirm this is the correct ID from STEP 0)
 * Open MITRE ATT&CK mitigation page: https://attack.mitre.org/mitigations/M####/
 > M#### stands for the mitigation being currently processed
 * Take screenshot to see the page structure
 
 ### STEP 2: Extract Techniques List related to M####
+> **REMINDER:** You are processing mitigation M#### (confirm this is the correct ID from STEP 0)
 * Locate the "Techniques Addressed by Mitigation" section
 * Extract the COMPLETE list of technique/subtechnique IDs from the table
 > CRITICAL: Use get_page_text or read_page tools to ensure you capture ALL techniques.
@@ -102,6 +113,7 @@ When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process
 * Count the total number of techniques shown (verify against table header if present)
 
 ### STEP 3: Check if mitigation exists in the database
+> **REMINDER:** You are processing mitigation M#### (confirm this is the correct ID from STEP 0)
 * switch to Nebula Graph Studio
 * navigate to Console
 * make sure you are in ESP01 space
@@ -113,6 +125,7 @@ When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process
  
 
 ### STEP 4: Verify that techniques/subtechniques are present in the database
+> **REMINDER:** You are processing mitigation M#### (confirm this is the correct ID from STEP 0)
 * switch to Nebula Graph Studio
 * navigate to Console
 * make sure you are in ESP01 space
@@ -127,6 +140,7 @@ When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process
 * if there are no missing techniques/subtechniques (i.e. database contains every technique/subtechnique from the mitigation webpage)- proceed to step 6 
 
 ### STEP 5: Create missing techniques/subtechniques in the database
+> **REMINDER:** You are processing mitigation M#### (confirm this is the correct ID from STEP 0)
 For each technique/subtechnique ID in the IMISSTHEMLIST:
 * 5a. Navigate to technique page. URL format: https://attack.mitre.org/techniques/T####/ (or /T####/###/ for subtechniques)
 * 5b. Extract required information:
@@ -183,7 +197,7 @@ INSERT EDGE IF NOT EXISTS has_subtechnique VALUES "T####"->"T####.###"@0:();
 5f. Upon the user approval, execute RESULTINSERT
 
 STEP 6: create mitigation edges
-
+> **REMINDER:** You are processing mitigation M#### (confirm this is the correct ID from STEP 0)
 For each technique/subtechnique from MWMLIST:
 
  * 6a. create nGQL statements for mitigates edges (can batch multiple):
@@ -200,6 +214,7 @@ VALUES "M####"->"T####"@0:(NULL, "Enterprise"),
 * 6c. Upon the user approval, execute RESULTINSERT2
 
 STEP 7: Verification
+> **REMINDER:** You are processing mitigation M#### (confirm this is the correct ID from STEP 0)
 * 7a. Count check:
 
 text
