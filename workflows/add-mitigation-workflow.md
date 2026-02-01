@@ -10,6 +10,15 @@ When you receive a task like: "Sync mitigation M1033 to NebulaGraph" or "Process
 
 **CRITICAL:** Once you identify the mitigation ID (M####), explicitly confirm it at the start of the workflow and maintain this ID throughout ALL workflow steps. Do not switch to a different mitigation ID unless explicitly instructed by the user.
 
+### Context Loss Prevention
+
+CRITICAL RULES:
+- At the beginning of workflow execution, explicitly state: "Processing mitigation M####"
+- If the conversation is interrupted or context is restored, re-confirm the mitigation ID before continuing
+- Never infer or assume a different mitigation ID from examples, screenshots, or previous context
+- If uncertain about which mitigation to process, STOP and ASK the user for clarification
+
+
 ## Critical Schema Information
 
 
